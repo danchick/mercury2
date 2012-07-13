@@ -1,0 +1,39 @@
+RewriteEngine on
+RewriteBase /
+
+#Alias /mercuryresources /var/www/path/here
+
+##############
+#ErrorDocument 404 /404-error.html
+
+##############
+# force one base url
+rewritecond %{http_host} ^www.mercury2 [nc]
+rewriterule ^(.*)$ http://mercury2/$1 [r=301,nc]
+
+##############
+# do not do anything for already existing files
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule .+ - [L]
+
+##############
+# is there a file in the cache folder?
+RewriteCond %{DOCUMENT_ROOT}/cache/$1 -f
+RewriteRule (.*) /cache/$1 [L]
+
+##############
+#route everything that's not a static file through mercury
+# update this to allow for different handlers with different behaviors
+
+RewriteCond %{SCRIPT_FILENAME} !(mercury.php|\.[jpg|jpeg|gif|png|css|pdf|js|css])$ [NC]
+RewriteRule (.*) /mercury.php?path=$1&%{QUERY_STRING}
+
+
+
+##############
+#force downloads
+#<FilesMatch "\.(?i:pdf)$">
+#  ForceType application/octet-stream
+#  Header set Content-Disposition attachment
+#</FilesMatch>
