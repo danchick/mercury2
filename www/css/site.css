@@ -13,6 +13,9 @@ body {
     padding: 5px;
     color: white;
 }
+#header a {
+    color: white;
+}
 #main {
     padding: 5px;
 }

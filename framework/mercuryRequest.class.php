@@ -6,11 +6,13 @@
         private $paths = array();
         private $site = array();
         private $content = array();
+        private $breadcrumbs = array();
         private $header = array();
         private $database = array();
-        private $meta = array();
-        private $js = array();
-        private $css = array();
+        protected $meta = array();
+        protected $js = array();
+        protected $css = array();
+	protected $bodyclass = array();
         private $is_admin_page;
         private $moduledata = array();
 	private $interfaceobject;
@@ -172,12 +174,16 @@
 				    $this->getPathVariable('SITE_MODULES') . $module . $slash . $module . ".php",
 				    $this->getPathVariable('FRAMEWORK_MODULES') . $module . $slash . $module . ".php"
 				    );
-
+	    
             foreach ($includefiles as $specificpath){
                 // check the site framework module path
                 if(file_exists($specificpath) && is_file($specificpath)){
-		    // load the base class and implementation
-		    $includes = array($baseClass, $specificpath);
+		    // load the base class and implementation if it's core, otherwise load as is
+		    if($specificpath == $this->getPathVariable('FRAMEWORK_MODULES') . $module . $slash . $module . ".php"){
+			$includes = array($baseClass, $specificpath);
+		    }else{
+			$includes = array();
+		    }
 		    // set the processing flags
                     $this->setProcessVariable('instantiate', $this->getModule());
 		    $this->setProcessVariable('include', $includes);
@@ -200,7 +206,7 @@
         }
         
 	function objectAction(){
-
+	
 	    //include the object file
 	    foreach($this->getProcessVariable('include') as $includefile){
 		require_once($includefile);
@@ -243,6 +249,12 @@
         }
         function setView($which){
             $this->setProcessVariable('view', $which);
+        }
+        function setLayout($which){
+            $this->setProcessVariable('layout', $which);
+        }
+        function getLayout(){
+            return $this->getProcessVariable('layout');
         }
         function getAction(){
             return $this->getProcessVariable('action');
@@ -413,12 +425,27 @@
         function setContentVariable($key, $value){
             $this->content[$key] = $value;
         }
-        function getContentVariable($which){
+        function getContentVariable($which, $default = ''){
             if(array_key_exists($which, $this->content)){
                 return($this->content[$which]);
             }else{
-                return '';
+                return $default;
             }
+        }
+        
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+
+        function addBreadcrumb($text, $url, $position = 'last'){
+	    $crumb = array('url' =>  $url, 'text' => $text);
+	    if($position == "first"){
+		array_unshift($this->breadcrumbs, $crumb);
+	    }
+	    if($position == "last"){
+		$this->breadcrumbs[] = $crumb;
+	    }	
+        }
+        function getBreadcrumbs(){
+            return($this->breadcrumbs);
         }
         
         ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -461,7 +488,7 @@
                 // check to see if the regular layout is actually there
                 if(file_exists( $this->getPathVariable('SITE_LAYOUTS') . $this->getProcessVariable('layout') . ".php")){
                     $this->setLayoutPath($this->getPathVariable('SITE_LAYOUTS') . $this->getProcessVariable('layout') . ".php");
-                } else {
+                } else if($this->getProcessVariable('layout') != ''){
                     echo "Layout: " . $this->getProcessVariable('layout') . ".php doesn't exist";
                 }
             }
@@ -499,6 +526,103 @@
 		$this->addCSS($this->getPathVariable('WEB_MERCURY_ADMIN_RESOURCES_URL') . "admin.css");
 	    }
 	    
+	}
+	
+	function link($in){
+
+	    /*
+		$this->m->link('addRegisterAction')
+		$this->m->link(array('action' =>  'addRegisterAction'))
+		$this->m->link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule'))
+		$this->m->link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule', 'anchor' => "bottom"))
+		$this->m->link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule', 'anchor' => "bottom", 'extrapath' => '4/smurf'))
+		$this->m->link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule', 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+		$this->m->link(array('anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+		$this->m->link(array('type' => "openlink", 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+		$this->m->link(array('type' => "link", 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+		$this->m->link(array('linktext' => "click me", 'type' => "link", 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+	    */
+
+	    if(is_string($in)){
+		$in = array('action' => $in);
+	    }
+	    
+	    // default action is blank
+	    if(! array_key_exists('action', $in)){
+		$in['action'] = '';
+	    }
+	    
+	    // default module is current one
+	    if(! array_key_exists('module', $in)){
+		$in['module'] = $this->getModule();
+	    }
+	    
+	    // default type is to return just the url
+	    if(! array_key_exists('type', $in)){
+		$in['type'] = 'urlonly';
+	    }
+	    
+	    // default link text is LINK
+	    if(! array_key_exists('linktext', $in)){
+		$in['linktext'] = 'LINK';
+	    }
+	    
+	    // default target is self
+	    if(! array_key_exists('target', $in)){
+		$in['target'] = '_self';
+	    }
+	    if($in['target'] != ''){
+		$target = " TARGET='" . $in['target'] . "'";
+	    }else{
+		$target = '';
+	    }
+	    
+	    // default extrapath is blank
+	    if(! array_key_exists('extrapath', $in)){
+		$in['extrapath'] = '';
+	    }
+	    if($in['extrapath'] != ''){
+		$extrapath = "/" . $in['extrapath'];
+		if($in['action'] == ''){
+		    $in['action'] = "index";
+		}
+	    }else{
+		$extrapath = '';
+	    }
+	    
+	    // default querystring is blank
+	    if(! array_key_exists('querystring', $in)){
+		$in['querystring'] = '';
+	    }
+	    if($in['querystring'] != ''){
+		$querystring = "?" . $in['querystring'];
+	    }else{
+		$querystring = '';
+	    }
+	    
+	    // default querystring is blank
+	    if(! array_key_exists('anchor', $in)){
+		$in['anchor'] = '';
+	    }
+	    if($in['anchor'] != ''){
+		$anchor = "#" . $in['anchor'];
+	    }else{
+		$anchor = '';
+	    }
+	    
+	    $url = "/" . $in['module'] . "/" . $in['action'] . $extrapath . $anchor . $querystring;
+	    $openlink = '<A HREF="'.$url.'"'.$target.'>';
+	    
+	    //////////////////
+	    if($in['type'] == "urlonly"){
+		return $url;
+	    }else if($in['type'] == "openlink"){
+		return $openlink;
+	    }else if($in['type'] == "link"){
+		return $openlink . $in['linktext'] . "</A>";
+	    }
+	    
+	    return $url;
 	}
         
         ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -573,6 +697,60 @@
 	}
 	function getJavascript(){
 	    return $this->js;
+	}
+        function addBodyClass($classname, $position = 'last'){
+	    if($position == "first"){
+		array_unshift($this->bodyclass, $classname);
+	    }
+	    if($position == "last"){
+		$this->bodyclass[] = $classname;
+	    }
+	}
+	function getBodyClass(){
+	    $class="";
+	    foreach($this->bodyclass as $bodyclass){
+		$class = $class . " " . $bodyclass;
+	    }
+	    return $class;
+	}
+	function getBodyClassArray(){
+	    return $this->bodyclass;
+	}
+
+	function addPageMessage($message, $type = "info"){
+	    if(! array_key_exists('PageMessages', $_SESSION)){
+		$_SESSION['PageMessages'] = array();
+	    }
+	    if(! is_array($_SESSION['PageMessages'])){
+		$_SESSION['PageMessages'] = array();
+ 	    }
+	    // error, success, info
+	    $message = array('Message' => $message, 'Type' => $type);
+	    $_SESSION['PageMessages'][] = $message;
+	}
+	function getPageMessages(){
+	    
+	    if(array_key_exists('PageMessages', $_SESSION) && is_array($_SESSION['PageMessages']) && count($_SESSION['PageMessages'])){
+		$messages = $_SESSION['PageMessages'];
+		unset($_SESSION['PageMessages']);
+		return($messages);
+	    }else{
+		unset($_SESSION['PageMessages']);
+		return array();
+	    }
+	}
+	function showPageMessage(){
+	    $messages = $this->getPageMessages();
+	    foreach($messages as $message){
+		if($message['Message']){
+		    ?>
+			<div class="alert alert-<?= hh($message['Type']) ?>">
+			    <button type="button" class="close" data-dismiss="alert">&times;</button>
+			    <?= hh($message['Message']) ?>
+			</div>
+		    <?php
+		}	
+	    }
 	}
 
     }

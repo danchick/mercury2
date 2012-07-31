@@ -3,7 +3,6 @@
 
         function postdetail(){
             echo "oo site";
-            $this->widget = new mercurydemo_widget(5);
         }
 
         function postdetail3(){

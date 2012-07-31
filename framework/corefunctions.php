@@ -41,13 +41,13 @@ function __autoload($name){
 /********************************************************************************/
 // partial methods and views
 /********************************************************************************/
-function partialMethod($call, $in = array()){
+function partialMethod($call, $in = array(), $contentVariableName = ''){
     $parts = explode("_", $call);
     
     // load the class partial
     $partialpath = $parts[0] . '_partial';
     $partial = new $partialpath;
-    call_user_func(array($partial, "router"), array('args' =>  $in, 'action' => $parts[1]));
+    call_user_func(array($partial, "router"), array('args' =>  $in, 'action' => $parts[1], 'ContentVariableName' => $contentVariableName));
 }
 
 function partialView($module, $action){
@@ -69,6 +69,34 @@ function partialView($module, $action){
             return($path);
         }
     }
+    return false;
+}
+
+/********************************************************************************/
+// object view
+/********************************************************************************/
+function objectView($module, $object, $view = ''){
+    global $m;
+    
+    if($view == ''){
+        $view = $object;
+        $object = $module;
+        $module = $m->getModule();
+    }
+    
+    $viewpath = '';
+    $possiblepaths = array(
+        $m->getPathVariable('SITE_MODULES') . $module .  "/view/".$object."/" . $view . ".php",
+        $m->getPathVariable('FRAMEWORK_MODULES') . $module .  "/view/".$object."/" . $view . ".php",
+    );
+    
+    foreach($possiblepaths as $path){
+        if(file_exists($path)){
+            return($path);
+        }
+    }
+    
+    die("Couldn't load object view file");
     return false;
 }
 
