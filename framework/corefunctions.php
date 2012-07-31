@@ -39,6 +39,107 @@ function __autoload($name){
 }
 
 /********************************************************************************/
+// link
+/********************************************************************************/
+function l($in){
+    
+    global $m;
+    /*
+        link('addRegisterAction')
+        link(array('action' =>  'addRegisterAction'))
+        link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule'))
+        link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule', 'anchor' => "bottom"))
+        link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule', 'anchor' => "bottom", 'extrapath' => '4/smurf'))
+        link(array('action' =>  'addRegisterAction', 'module' => 'anothermodule', 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+        link(array('anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+        link(array('type' => "openlink", 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+        link(array('type' => "link", 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+        link(array('linktext' => "click me", 'type' => "link", 'anchor' => "bottom", 'extrapath' => '4/smurf', 'querystring' => "a=123&b=red"))
+    */
+
+    if(is_string($in)){
+        $in = array('action' => $in);
+    }
+    
+    // default action is blank
+    if(! array_key_exists('action', $in)){
+        $in['action'] = '';
+    }
+    
+    // default module is current one
+    if(! array_key_exists('module', $in)){
+        $in['module'] = $m->getModule();
+    }
+    
+    // default type is to return just the url
+    if(! array_key_exists('type', $in)){
+        $in['type'] = 'urlonly';
+    }
+    
+    // default link text is LINK
+    if(! array_key_exists('linktext', $in)){
+        $in['linktext'] = 'LINK';
+    }
+    
+    // default target is self
+    if(! array_key_exists('target', $in)){
+        $in['target'] = '_self';
+    }
+    if($in['target'] != ''){
+        $target = " TARGET='" . $in['target'] . "'";
+    }else{
+        $target = '';
+    }
+    
+    // default extrapath is blank
+    if(! array_key_exists('extrapath', $in)){
+        $in['extrapath'] = '';
+    }
+    if($in['extrapath'] != ''){
+        $extrapath = "/" . $in['extrapath'];
+        if($in['action'] == ''){
+            $in['action'] = "index";
+        }
+    }else{
+        $extrapath = '';
+    }
+    
+    // default querystring is blank
+    if(! array_key_exists('querystring', $in)){
+        $in['querystring'] = '';
+    }
+    if($in['querystring'] != ''){
+        $querystring = "?" . $in['querystring'];
+    }else{
+        $querystring = '';
+    }
+    
+    // default querystring is blank
+    if(! array_key_exists('anchor', $in)){
+        $in['anchor'] = '';
+    }
+    if($in['anchor'] != ''){
+        $anchor = "#" . $in['anchor'];
+    }else{
+        $anchor = '';
+    }
+    
+    $url = "/" . $in['module'] . "/" . $in['action'] . $extrapath . $anchor . $querystring;
+    $openlink = '<A HREF="'.$url.'"'.$target.'>';
+    
+    //////////////////
+    if($in['type'] == "urlonly"){
+        return $url;
+    }else if($in['type'] == "openlink"){
+        return $openlink;
+    }else if($in['type'] == "link"){
+        return $openlink . $in['linktext'] . "</A>";
+    }
+    
+    return $url;
+}
+
+/********************************************************************************/
 // partial methods and views
 /********************************************************************************/
 function partialMethod($call, $in = array(), $contentVariableName = ''){
