@@ -1,6 +1,79 @@
 <?php
 
 /********************************************************************************/
+// autoload objects
+/********************************************************************************/
+function __autoload($name){
+    global $m;
+    $parts = explode("_", $name);
+    $module = $parts[0];
+    if(count($parts) > 1){
+        $action = $parts[1];
+    }else{
+        $action = $module;
+    }
+    
+    // load the base class if it's there
+    $slash = $m->getSiteVariable('DIRECTORY_SEPARATOR');
+    $basepath = $m->getPathVariable('FRAMEWORK_MODULES'). $module . $slash . $action . ".class.php";
+    if(file_exists($basepath)){
+        include($basepath);
+    }
+    
+    // load the override or the base implementation
+    $classpath = $module . $slash . $action . ".php";
+
+    $sitefile = $m->getPathVariable('SITE_MODULES') . $classpath;
+    $frameworkfile = $m->getPathVariable('FRAMEWORK_MODULES') . $classpath;
+    
+    if(file_exists($sitefile) && is_file($sitefile)){
+        include($sitefile);
+
+    }else if(file_exists($frameworkfile) && is_file($frameworkfile)){
+        include($frameworkfile);
+
+    }else{
+        echo "Could not load class: " . $name;
+    }
+    
+}
+
+/********************************************************************************/
+// partial methods and views
+/********************************************************************************/
+function partialMethod($call, $in = array()){
+    $parts = explode("_", $call);
+    
+    // load the class partial
+    $partialpath = $parts[0] . '_partial';
+    $partial = new $partialpath;
+    call_user_func(array($partial, "router"), array('args' =>  $in, 'action' => $parts[1]));
+}
+
+function partialView($module, $action){
+    global $m;
+    
+    if($action == ''){
+        $action = $module;
+        $module = $this->getModule();
+    }
+    
+    $viewpath = '';
+    $possiblepaths = array(
+        $m->getPathVariable('SITE_MODULES') . $module .  "/view/partial/" . $action . ".php",
+        $m->getPathVariable('FRAMEWORK_MODULES') . $module .  "/view/partial/" . $action . ".php",
+    );
+    
+    foreach($possiblepaths as $path){
+        if(file_exists($path)){
+            return($path);
+        }
+    }
+    return false;
+}
+
+
+/********************************************************************************/
 // the magic -m-ercury function that will call a function from the site, if defined, and otherwise the core function
 /********************************************************************************/
 function m($module, $functionname, $variable = array(), $coreonly = 0){
@@ -55,7 +128,6 @@ function m($module, $functionname, $variable = array(), $coreonly = 0){
     
     return($returnvalue);
 }
-
 
 /********************************************************************************/
 // functions for dumping arrays

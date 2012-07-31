@@ -13,12 +13,16 @@
     $paths['WEB_CSS_URL'] = $paths['WEB_ROOT_URL'] . "css/" ;
     $paths['WEB_IMAGES'] = $paths['WEB_ROOT'] . "images" . $directory_separator ;
     $paths['WEB_IMAGES_URL'] = $paths['WEB_ROOT_URL'] . "images/" ;
+    $paths['WEB_SCRIPTS'] = $paths['WEB_ROOT'] . "scripts" . $directory_separator ;
+    $paths['WEB_SCRIPTS_URL'] = $paths['WEB_ROOT_URL'] . "scripts/" ;
     $paths['WEB_MERCURY'] = $paths['WEB_ROOT'] . "m" . $directory_separator ;
     $paths['WEB_MERCURY_URL'] = $paths['WEB_ROOT'] . "m/" ;
     $paths['WEB_MERCURY_UPLOADS'] = $paths['WEB_MERCURY'] . "uploads" . $directory_separator ;
     $paths['WEB_MERCURY_UPLOADS_URL'] = $paths['WEB_MERCURY_URL'] . "uploads/" ;
-    $paths['WEB_SCRIPTS'] = $paths['WEB_ROOT'] . "scripts" . $directory_separator ;
-    $paths['WEB_SCRIPTS_URL'] = $paths['WEB_ROOT_URL'] . "scripts/" ;
+    $paths['WEB_MERCURY_RESOURCES'] = $paths['WEB_ROOT'] . "m/resources/" ;
+    $paths['WEB_MERCURY_RESOURCES_URL'] = $paths['WEB_ROOT_URL'] . "m/resources/" ;
+    $paths['WEB_MERCURY_ADMIN_RESOURCES'] = $paths['WEB_ROOT'] . "m/resources/admin/" ;
+    $paths['WEB_MERCURY_ADMIN_RESOURCES_URL'] = $paths['WEB_ROOT_URL'] . "m/resources/admin/" ;
     
     $paths['ROOT'] = substr($paths['WEB_ROOT'], 0, -4);
     

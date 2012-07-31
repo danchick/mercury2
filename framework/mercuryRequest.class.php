@@ -51,32 +51,6 @@
 	// PROCESS FUNCTIONS
         ////////////////////////////////////////////////////////////////////////////////////////////////
 
-	function proceduralAction(){
-	    //include the file the mercury way here
-	    ob_start();
-	    require_once($this->getProcessVariable('include'));
-	    $this->setContentVariable('main', ob_get_contents());
-	    ob_end_clean();
-        }
-        
-	function objectAction(){
-	    //include the object file
-	    foreach($this->getProcessVariable('include') as $includefile){
-		require_once($includefile);
-	    }
-
-	    // fire up an interface object for that class
-	    $modulename = $this->getProcessVariable('instantiate');
-	    $this->interfaceobject = new $modulename($this);
-	    
-	    ob_start();
-	    call_user_func(array($this->interfaceobject, $this->getProcessVariable('action')));
-	    $this->setContentVariable('main', ob_get_contents());
-	    ob_end_clean();
-        }
-        
-        ////////////////////////////////////////////////////////////////////////////////////////////////
-
         function determineAction(){
             $path = $this->getInVariable('path');
     
@@ -91,9 +65,9 @@
                 $patharray = explode("/", $path);
                 
                 // check to see if it's admin
-                if($path[0] == 'admin'){
-                    
-                    $this->setIsAdmin = 1;
+                if($patharray[0] == 'admin'){
+		    
+                    $this->setIsAdmin(1);
     
                     // action is the third parameter, if present
                     if (count($patharray) == 1 || $patharray[1] == ""){
@@ -128,10 +102,10 @@
             $pathtranslations[] = $this->getPathVariable('SITE_PATHS') . $path . "index.php";
             $pathtranslations[] = $this->getPathVariable('SITE_PATHS') . $path . "index.html";
     
-            // pull in an seo file if there is one to be had
+            // pull in a path translation file if there is one to be had
             foreach ($pathtranslations as $specificpath){
                 if(file_exists($specificpath) && is_file($specificpath)){
-                        // seo path will set module, action, cache path and include type **DC
+                        // path translation path will set module, action, cache path and include type **DC
                         require ($specificpath);
                         break;
                 }
@@ -174,7 +148,7 @@
                 // check the site module path
                 if(file_exists($this->getPathVariable('SITE_MODULES') . $specificpath) && is_file($this->getPathVariable('SITE_MODULES') . $specificpath)){
                     $this->setProcessVariable('include', $this->getPathVariable('SITE_MODULES') . $specificpath);
-                    $this->setProcessVariable('type', "module");
+                    $this->setProcessVariable('type', "procedural");
                     $this->setProcessVariable('contentCachePath', $specificpath);
                     $this->setProcessVariable('interface', $pathinfo['interface']);
                     $this->setProcessVariable('source', 'site');
@@ -184,7 +158,7 @@
                 // check the site framework module path
                 if(file_exists($this->getPathVariable('FRAMEWORK_MODULES') . $specificpath) && is_file($this->getPathVariable('FRAMEWORK_MODULES') . $specificpath)){
                     $this->setProcessVariable('include', $this->getPathVariable('FRAMEWORK_MODULES') . $specificpath);
-                    $this->setProcessVariable('type', "module");
+                    $this->setProcessVariable('type', "procedural");
                     $this->setProcessVariable('contentCachePath', $specificpath);
                     $this->setProcessVariable('interface', $pathinfo['interface']);
                     $this->setProcessVariable('source', 'framework');
@@ -193,39 +167,57 @@
             }        
 
             // check for the right file to include, modules
-            $includefiles = array();
-	    // object files
-            $includefiles[] = array('path' =>  $module . $slash . $module . ".class.php", 'interface' => 'object');
+	    $baseClass = $this->getPathVariable('FRAMEWORK_MODULES') . $module . $slash . $module . ".class.php";
+            $includefiles = array(
+				    $this->getPathVariable('SITE_MODULES') . $module . $slash . $module . ".php",
+				    $this->getPathVariable('FRAMEWORK_MODULES') . $module . $slash . $module . ".php"
+				    );
 
-            foreach ($includefiles as $pathinfo){
-		$specificpath = $pathinfo['path'];
-		$includes = array();
-		
+            foreach ($includefiles as $specificpath){
                 // check the site framework module path
-                if(file_exists($this->getPathVariable('FRAMEWORK_MODULES') . $specificpath) && is_file($this->getPathVariable('FRAMEWORK_MODULES') . $specificpath)){
-                    $includes[] = $this->getPathVariable('FRAMEWORK_MODULES') . $specificpath;
+                if(file_exists($specificpath) && is_file($specificpath)){
+		    // load the base class and implementation
+		    $includes = array($baseClass, $specificpath);
+		    // set the processing flags
                     $this->setProcessVariable('instantiate', $this->getModule());
-                }
-
-                // check the site module path
-                if(file_exists($this->getPathVariable('SITE_MODULES') . $specificpath) && is_file($this->getPathVariable('SITE_MODULES') . $specificpath)){
-                    $includes[] = $this->getPathVariable('SITE_MODULES') . $specificpath;
-                    $this->setProcessVariable('instantiate', "_" . $this->getModule());
-                }
-		
-		if(count($includes)){
-                    $this->setProcessVariable('include', $includes);
-                    $this->setProcessVariable('type', "object");
-                    $this->setProcessVariable('contentCachePath', $specificpath);
-                    $this->setProcessVariable('interface', $pathinfo['interface']);
+		    $this->setProcessVariable('include', $includes);
+		    $this->setProcessVariable('type', "object");
+		    $this->setProcessVariable('contentCachePath', $specificpath);
+		    $this->setProcessVariable('interface', 'method');
 		    return;
-		}
-                
+                }
             }        
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+
+	function proceduralAction(){
+	    //include the file the mercury way here
+	    ob_start();
+	    require_once($this->getProcessVariable('include'));
+	    $this->setContentVariable('main', ob_get_contents());
+	    ob_end_clean();
+        }
+        
+	function objectAction(){
+
+	    //include the object file
+	    foreach($this->getProcessVariable('include') as $includefile){
+		require_once($includefile);
+	    }
+
+	    // fire up an interface object for that class
+	    $modulename = $this->getProcessVariable('instantiate');
+	    $this->interfaceobject = new $modulename($this);
+	    
+	    ob_start();
+	    call_user_func(array($this->interfaceobject, 'router'), $this->getAction());
+	    $this->setContentVariable('main', ob_get_contents());
+	    ob_end_clean();
         }
         
 	////////////////////////////////////////////////////////////////////////////////////////////////
-
+	
         function setProcessArray($processarray){
             $this->process = $processarray;
         }
@@ -249,13 +241,38 @@
         function setModule($which){
             $this->setProcessVariable('module', $which);
         }
+        function setView($which){
+            $this->setProcessVariable('view', $which);
+        }
         function getAction(){
             return $this->getProcessVariable('action');
         }
         function getModule(){
             return $this->getProcessVariable('module');
         }
+        function getView(){
+            return $this->getProcessVariable('view');
+        }
 	
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+
+        function getViewPath(){
+	    
+	    $viewpath = '';
+	    $possiblepaths = array(
+		$this->getPathVariable('SITE_MODULES') . $this->getModule() .  "/view/" . $this->getView() . ".php",
+		$this->getPathVariable('FRAMEWORK_MODULES') . $this->getModule() .  "/view/" . $this->getView() . ".php",
+	    );
+	    
+	    foreach($possiblepaths as $path){
+		if(file_exists($path)){
+		    return $path;
+		}
+	    }
+	    
+	    return false;
+        }
+
         ////////////////////////////////////////////////////////////////////////////////////////////////
 
         function setIsAdmin($which){
@@ -427,10 +444,12 @@
 	// RENDER FUNCTIONS
         ////////////////////////////////////////////////////////////////////////////////////////////////
         
-        function renderPage(){ // **DC
+        function renderPage(){
 
             // check to see if we need an admin layout
             if($this->is_admin_page == 1){
+		$this->setAdminResources();
+
                 if(file_exists( $this->getPathVariable('SITE_LAYOUTS') . "admin.php")){
                     $this->setLayoutPath($this->getPathVariable('SITE_LAYOUTS') . "admin.php");
                 } else if(file_exists( $this->getPathVariable('FRAMEWORK_LAYOUTS') . "admin.php")){
@@ -469,6 +488,18 @@
             echo $page;
             
         }
+	
+	function setAdminResources(){
+	    // if there is an admin.css file in the web css folder use it
+	    if(file_exists($this->getPathVariable('WEB_CSS') . "admin.css")){
+		$this->addCSS($this->getPathVariable('WEB_CSS_URL') . "admin.css");
+
+	    // otherwise use the one that is in the m/resources folder
+	    }else{
+		$this->addCSS($this->getPathVariable('WEB_MERCURY_ADMIN_RESOURCES_URL') . "admin.css");
+	    }
+	    
+	}
         
         ////////////////////////////////////////////////////////////////////////////////////////////////
 	// HEADER FUNCTIONS
@@ -507,6 +538,42 @@
         function resetHeaders(){
             $this->headers = array();
         }
-        
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+	// PAGE PIECES
+        ////////////////////////////////////////////////////////////////////////////////////////////////
+        function addCSS($path, $position = "last", $pathkey = ''){
+	    if($pathkey != ''){
+		$path = $this->getPathVariable($pathkey) . $path;
+	    }
+
+	    $i = array_search($path, $this->getCSS());
+	    if($i === FALSE){
+		if($position == "first"){
+		    array_unshift($this->css, $path);
+		}
+		if($position == "last"){
+		    $this->css[] = $path;
+		}	
+	    }
+	}
+	function getCSS(){
+	    return $this->css;
+	}
+	function printCSS(){
+	    partial("core", "printCSS", array('css' =>  $this->getCSS()));
+	}
+
+        function addJavascript($path, $position = "last"){
+	    if($position == "first"){
+		array_unshift($this->js, $path);
+	    }
+	    if($position == "last"){
+		$this->js[] = $path;
+	    }
+	}
+	function getJavascript(){
+	    return $this->js;
+	}
+
     }
 ?>

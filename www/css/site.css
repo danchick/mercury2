@@ -1,0 +1,23 @@
+body {
+    background-color: silver;
+}
+
+#wrapper {
+    width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: white;
+}
+#header{
+    background-color: black;
+    padding: 5px;
+    color: white;
+}
+#main {
+    padding: 5px;
+}
+#footer{
+    background-color: black;
+    padding: 5px;
+    color: white;
+}

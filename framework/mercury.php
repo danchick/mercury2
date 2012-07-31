@@ -9,6 +9,8 @@
     // set environment 
     include('mercuryRequest.class.php');
     $m = new mercuryRequest();
+    require_once($m->getPathVariable('FRAMEWORK_ROOT') . 'mercuryModule.class.php');
+    require_once($m->getPathVariable('FRAMEWORK_ROOT') . 'mercuryPartial.class.php');
 
     // load core functions 
     require('corefunctions.php');
@@ -50,7 +52,7 @@
             // if not then include it (setting cache if possible) 
             $m->includeFile();
     
-        }else if($m->getProcessVariable('type') == 'module'){
+        }else if($m->getProcessVariable('type') == 'procedural'){
 
             // run the appropriate function  (setting cache if possible) 
             $m->proceduralAction();
